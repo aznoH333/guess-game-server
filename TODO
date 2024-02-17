@@ -2,8 +2,11 @@
     [X] Send message from server
     [X] Send message from client
     [ ] Clean up the mess
-        [ ] Server
-        [ ] Server init
+        [X] Server
+        [X] Server init
+        [X] Interaction handler
+        [ ] fix variable names
+        [ ] Client
     [ ] Continuous two way communication
     [ ] Use something other than strings
 
@@ -15,3 +18,4 @@
 [ ] Misc
     [ ] Figure out unix sockets
     [ ] Observer website ._.
+    [ ] Threads?
