@@ -191,6 +191,13 @@ namespace Server{
         server->sendMessage(socketFileDescriptor, Communication::text("hello"));
         std::string res = server->waitForResponse(socketFileDescriptor).res.content;
         std::cout << "recieved " << res << "\n";
+
+        for (int i = 0; i < 10; i++){
+            server->sendMessage(socketFileDescriptor, Communication::text("bell end"));
+            for (int j = 0; j < 1000000000; j++){
+
+            }
+        }
         server->closeSocket(socketFileDescriptor);
     }
 }
