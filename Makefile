@@ -1,3 +1,6 @@
+# I didnt write this file
+# I am too lazy to make theese
+
 #
 # 'make'        build executable file 'main'
 # 'make clean'  removes all .o and executable files

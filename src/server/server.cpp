@@ -135,35 +135,35 @@ namespace Server{
         }
     }
 
-    void Server::sendMessage(int socketFileDescriptor, std::string messageContent){
+    void Server::sendMessage(int socketFileDescriptor, Communication::CommUnion message){
         
-        int result = send(socketFileDescriptor, messageContent.c_str(), messageContent.size(), 0);
+        int result = send(socketFileDescriptor, message.bytes, sizeof(Communication::CommUnion), 0);
         if (result == -1){
             perror("send");
         }
     }
 
 
-    std::string Server::waitForResponse(int socketFileDescriptor){
+    Communication::CommUnion Server::waitForResponse(int socketFileDescriptor){
         int timeOut = 20000000;
-        char buffer[100];
+        Communication::CommUnion result;
         int numberOfBytes;
         while(timeOut > 0){
             timeOut--;
-            numberOfBytes = recv(socketFileDescriptor, buffer, 100-1, 0);
+            numberOfBytes = recv(socketFileDescriptor, result.bytes, 100-1, 0);
 
             if (numberOfBytes == -1) {
                 perror("recv");
                 exit(1);
             }else if (numberOfBytes != 0){
-                buffer[numberOfBytes] = '\0';
-                return std::string(buffer);
+                return result;
             }
 
                     
         }
         std::cout << "Timed out \n";
-        return "TODO this";
+        // bad result
+        return {};
     }
 
 
@@ -188,8 +188,8 @@ namespace Server{
     }
 
     void ClientInteractionHandler::beginInteraction(){
-        server->sendMessage(socketFileDescriptor, "hello world");
-        std::string res = server->waitForResponse(socketFileDescriptor);
+        server->sendMessage(socketFileDescriptor, Communication::text("hello"));
+        std::string res = server->waitForResponse(socketFileDescriptor).res.content;
         std::cout << "recieved " << res << "\n";
         server->closeSocket(socketFileDescriptor);
     }

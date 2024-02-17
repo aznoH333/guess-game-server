@@ -1,7 +1,7 @@
 #ifndef SERVER_MAIN
 #define SERVER_MAIN
 
-
+#include "communicationStruct.h"
 #include <string>
 #include <iostream>
 #include <stdlib.h>
@@ -40,8 +40,8 @@ namespace Server {
         public:
             void init(ServerInitInfo info);
             void start();
-            void sendMessage(int socketFileDescriptor, std::string messageContent);
-            std::string waitForResponse(int socketFileDescriptor);
+            void sendMessage(int socketFileDescriptor, Communication::CommUnion message);
+            Communication::CommUnion waitForResponse(int socketFileDescriptor);
             void closeSocket(int socketFileDescriptor);
             
             void dispose();
@@ -68,6 +68,7 @@ namespace Server {
         
     };
 
+    
 }
 
 
