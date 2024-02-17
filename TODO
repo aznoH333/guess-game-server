@@ -1,0 +1,17 @@
+[ ] BASICS
+    [X] Send message from server
+    [X] Send message from client
+    [ ] Clean up the mess
+        [ ] Server
+        [ ] Server init
+    [ ] Continuous two way communication
+    [ ] Use something other than strings
+
+[ ] MAIN FUNCTIONALITY
+    [ ] Passwords
+    [ ] List players
+    [ ] Game
+
+[ ] Misc
+    [ ] Figure out unix sockets
+    [ ] Observer website ._.
