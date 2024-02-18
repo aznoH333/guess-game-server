@@ -135,35 +135,51 @@ namespace Server{
         }
     }
 
-    void Server::sendMessage(int socketFileDescriptor, Communication::CommUnion message){
+    void Server::sendMessage(int socketFileDescriptor, Communication::CommunicationPacket message){
         
-        int result = send(socketFileDescriptor, message.bytes, sizeof(Communication::CommUnion), 0);
-        if (result == -1){
-            perror("send");
+        send(socketFileDescriptor, message.header.bytes, sizeof(Communication::CommUnion), 0);
+        
+        if (message.header.comm.contentLength > 0){
+            send(socketFileDescriptor, message.content.content, message.header.comm.contentLength, 0);
         }
+        
     }
 
 
-    Communication::CommUnion Server::waitForResponse(int socketFileDescriptor){
+    Communication::CommunicationPacket Server::waitForResponse(int socketFileDescriptor){
         int timeOut = 20000000;
-        Communication::CommUnion result;
+        Communication::CommunicationPacket result;
         int numberOfBytes;
         while(timeOut > 0){
             timeOut--;
-            numberOfBytes = recv(socketFileDescriptor, result.bytes, 100-1, 0);
+            numberOfBytes = recv(socketFileDescriptor, result.header.bytes, sizeof(Communication::CommUnion), 0);
 
             if (numberOfBytes == -1) {
                 perror("recv");
                 exit(1);
             }else if (numberOfBytes != 0){
-                return result;
+                break;
             }
 
                     
         }
-        std::cout << "Timed out \n";
-        // bad result
-        return {};
+        if (result.header.comm.contentLength > 0){
+            int timeOut = 20000000;
+            while (timeOut > 0) {
+                timeOut--;
+
+                numberOfBytes = recv(socketFileDescriptor, result.content.content, result.header.comm.contentLength, 0);
+
+                if (numberOfBytes == -1) {
+                    perror("recv");
+                    exit(1);
+                }else if (numberOfBytes != 0){
+                    break;
+                }
+            }
+        }
+        // TODO timeouts??
+        return result;
     }
 
 
@@ -180,7 +196,7 @@ namespace Server{
 
 
 
-    // --== uset interaction handler ==--
+    // --== user interaction handler ==--
     ClientInteractionHandler::ClientInteractionHandler(int socketFileDescriptor, Server* server, std::string clientIp){
         this->socketFileDescriptor = socketFileDescriptor;
         this->server = server;
@@ -189,11 +205,11 @@ namespace Server{
 
     void ClientInteractionHandler::beginInteraction(){
         server->sendMessage(socketFileDescriptor, Communication::text("hello"));
-        std::string res = server->waitForResponse(socketFileDescriptor).res.content;
+        std::string res = std::string(server->waitForResponse(socketFileDescriptor).content.content);
         std::cout << "recieved " << res << "\n";
 
         for (int i = 0; i < 10; i++){
-            server->sendMessage(socketFileDescriptor, Communication::text("bell end"));
+            server->sendMessage(socketFileDescriptor, Communication::text("123456789"));
             for (int j = 0; j < 1000000000; j++){
 
             }

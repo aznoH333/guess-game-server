@@ -9,7 +9,7 @@
         [X] Client
     [X] Continuous two way communication
     [X] Use something other than strings
-    [ ] Comm protocol kinda sucks ngl
+    [X] Comm protocol kinda sucks ngl
 
 [ ] MAIN FUNCTIONALITY
     [ ] Passwords

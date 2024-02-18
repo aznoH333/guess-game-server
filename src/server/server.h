@@ -40,8 +40,8 @@ namespace Server {
         public:
             void init(ServerInitInfo info);
             void start();
-            void sendMessage(int socketFileDescriptor, Communication::CommUnion message);
-            Communication::CommUnion waitForResponse(int socketFileDescriptor);
+            void sendMessage(int socketFileDescriptor, Communication::CommunicationPacket message);
+            Communication::CommunicationPacket waitForResponse(int socketFileDescriptor);
             void closeSocket(int socketFileDescriptor);
             
             void dispose();

@@ -6,34 +6,38 @@
 namespace Communication {
 
 
-
-    const int MAX_CONTENT_SIZE = 64;
-
+    const int MAX_CONTENT_SIZE = 128;
 
     enum CommunicationCode{
         ERROR = 0,
-        CLOSE_CONNECTION,
-        LIST,
-        CHALLANGE,
-        TEXT,
+        TEXT
     };
     
     
     
     struct CommStruct{
         char communicationCode;
-        char content[MAX_CONTENT_SIZE];
+        int contentLength;
     };
 
+
     union CommUnion {
-        CommStruct res;
+        CommStruct comm;
         char bytes[sizeof(CommStruct)];
     };
 
+    struct CommunicationContent{
+        char content[MAX_CONTENT_SIZE];
+    };
+
+    struct CommunicationPacket{
+        CommUnion header;
+        CommunicationContent content;
+    };
+
     // response utility functions
-    CommUnion error();
-    CommUnion text(std::string text);
-    CommUnion closeConnection();
+    CommunicationPacket error();
+    CommunicationPacket text(std::string text);
 
 }
 
