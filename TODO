@@ -12,8 +12,9 @@
     [X] Comm protocol kinda sucks ngl
 
 [ ] MAIN FUNCTIONALITY
-    [ ] Passwords
+    [X] Passwords
     [ ] List players
+    [X] User threads
     [ ] Game
 
 [ ] Misc

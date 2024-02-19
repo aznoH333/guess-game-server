@@ -8,7 +8,7 @@ namespace Server{
         return {
             "3490",
             10,
-            "bean gus"
+            "bello"
         };
     }
 
@@ -35,12 +35,14 @@ namespace Server{
     // --== Server ==--
 
 
-    void Server::init(ServerInitInfo info){
+    void Server::init(ServerInitInfo info, Game::GameManager* gameManager){
         this->info = info;
+        this->gameManager = gameManager;
         addrinfo hints; 
         addrinfo* servinfo;
         addrinfo* p;
         struct sigaction sa;
+
 
 
         std::cout << "Started server init \n";
@@ -109,6 +111,10 @@ namespace Server{
         sockaddr_storage clientAddress;
         socklen_t sin_size;
 
+
+        // start reaper
+        userHandlerReaper = std::thread(&Server::reapThreads, this);
+
         // start loop
         while(true) {
             char clientIp[INET6_ADDRSTRLEN];
@@ -125,13 +131,39 @@ namespace Server{
                 clientIp, sizeof(clientIp));
             printf("server: got connection from %s\n", clientIp);
             
-            // this is questionable use threads? maybe?
-            if (!fork()) {
-                close(socketFileDescriptor);
-                ClientInteractionHandler handler = ClientInteractionHandler(newSocketFileDescriptor, this, clientIp);
-                handler.beginInteraction();
+            
+            int nextId = gameManager->getNextUniqueId();
+            // todo this shouldnt work or it leaks memory
+            ClientInteractionHandler* c = new ClientInteractionHandler(newSocketFileDescriptor, this, clientIp, gameManager, nextId);
+            //c->beginInteraction();
+            std::thread* thread = new std::thread(&ClientInteractionHandler::beginInteraction, c);
+            ClientAndThread cat = {
+                c,
+                thread,
+            };
+
+            clientHandlers[nextId] = cat;
+            
+
+            
+
+
+        }
+    }
+
+    void Server::reapThreads(){
+        while(true){
+            for (std::pair<int, ClientAndThread> p : clientHandlers){
+                if (!p.second.shouldBeDeleted){
+                    continue;
+                }
+                p.second.thread->join();
+                delete p.second.client;
+                delete p.second.thread;
+                clientHandlers.erase(p.first);
+                break;
+
             }
-            close(newSocketFileDescriptor);  // parent doesn't need this
         }
     }
 
@@ -140,10 +172,14 @@ namespace Server{
         send(socketFileDescriptor, message.header.bytes, sizeof(Communication::CommUnion), 0);
         
         if (message.header.comm.contentLength > 0){
-            send(socketFileDescriptor, message.content.content, message.header.comm.contentLength, 0);
+            send(socketFileDescriptor, message.content.bytes, message.header.comm.contentLength, 0);
         }
         
     }
+
+    void Server::removeHandler(int userId){
+        clientHandlers[userId].shouldBeDeleted = true;
+    };
 
 
     Communication::CommunicationPacket Server::waitForResponse(int socketFileDescriptor){
@@ -168,7 +204,7 @@ namespace Server{
             while (timeOut > 0) {
                 timeOut--;
 
-                numberOfBytes = recv(socketFileDescriptor, result.content.content, result.header.comm.contentLength, 0);
+                numberOfBytes = recv(socketFileDescriptor, result.content.bytes, result.header.comm.contentLength, 0);
 
                 if (numberOfBytes == -1) {
                     perror("recv");
@@ -184,36 +220,97 @@ namespace Server{
 
 
     void Server::closeSocket(int socketFileDescriptor){
+        sendMessage(socketFileDescriptor, Communication::closeConnection());
         close(socketFileDescriptor);
-        std::cout << "closing connection \n";
-        exit(0);
     }
 
     void Server::dispose(){
         // TODO
     }
 
+    ServerInitInfo& Server::getInfo(){
+        return info;
+    }
+
 
 
 
     // --== user interaction handler ==--
-    ClientInteractionHandler::ClientInteractionHandler(int socketFileDescriptor, Server* server, std::string clientIp){
+    ClientInteractionHandler::ClientInteractionHandler(int socketFileDescriptor, Server* server, std::string clientIp, Game::GameManager* game, int userId){
         this->socketFileDescriptor = socketFileDescriptor;
         this->server = server;
         this->clientIp = clientIp;
+        this->userId = userId;
+        this->game = game;
+        
     }
 
     void ClientInteractionHandler::beginInteraction(){
-        server->sendMessage(socketFileDescriptor, Communication::text("hello"));
-        std::string res = std::string(server->waitForResponse(socketFileDescriptor).content.content);
-        std::cout << "recieved " << res << "\n";
+        server->sendMessage(socketFileDescriptor, Communication::text("Enter password"));
+        Communication::CommunicationPacket p = server->waitForResponse(socketFileDescriptor);
+        std::string res = Communication::getTextFromContent(p);
 
-        for (int i = 0; i < 10; i++){
-            server->sendMessage(socketFileDescriptor, Communication::text("123456789"));
-            for (int j = 0; j < 1000000000; j++){
-
-            }
+        
+        if (p.header.comm.communicationCode == Communication::CommunicationCode::TEXT && res == server->getInfo().password){
+            server->sendMessage(socketFileDescriptor, Communication::text("Correct password"));
+            server->sendMessage(socketFileDescriptor, Communication::text("Your id is " + std::to_string(userId)));
+            game->addUser(userId);
+            mainLoop();
+        }else {
+            closeHandler();
         }
+        
+    }
+
+    ClientInteractionHandler::~ClientInteractionHandler(){
+        //delete thread;
+        //std::cout << "got here\n";
+    }
+
+
+    void ClientInteractionHandler::mainLoop(){
+        server->sendMessage(socketFileDescriptor, Communication::text("Input command:"));
+        while(shouldContinue){
+            Communication::CommunicationPacket packet = server->waitForResponse(socketFileDescriptor);
+            respondToPacket(packet);
+        }
+        
+    }
+
+    void ClientInteractionHandler::closeHandler(){
+        std::cout << "closing connection to " << clientIp << "\n";
+        server->sendMessage(socketFileDescriptor, Communication::closeConnection());
         server->closeSocket(socketFileDescriptor);
+        server->removeHandler(userId);
+        game->removeUser(userId);
+        shouldContinue = false;
+    }
+
+
+    void ClientInteractionHandler::respondToPacket(Communication::CommunicationPacket packet){
+        switch (packet.header.comm.communicationCode) {
+            default:
+            case Communication::CommunicationCode::ERROR:
+            case Communication::CommunicationCode::CLOSE_CONNECTION:
+                closeHandler();
+                return;
+            case Communication::CommunicationCode::LIST_PLAYERS:
+                { // braces are here so the compiler doesnt complain about playerIds not being initialized by the other branches
+                    server->sendMessage(socketFileDescriptor, Communication::text("Lising all players"));
+                    std::vector<int> playerIds = game->listAllPlayers();
+
+                    for (int id: playerIds){
+                        server->sendMessage(socketFileDescriptor, Communication::text("Player" + std::to_string(id)));
+                    }
+                }
+                return;
+            case Communication::CommunicationCode::TEXT:
+                server->sendMessage(socketFileDescriptor, Communication::text("TODO this"));
+                break;
+            case Communication::CommunicationCode::PLAY:
+
+                return;
+
+        }
     }
 }

@@ -5,10 +5,12 @@
 namespace Communication {
 
     CommunicationPacket error(){
-        return {
-            CommunicationCode::ERROR, 
-            0
-        };
+        CommunicationPacket out;
+
+        out.header.comm.communicationCode = CommunicationCode::ERROR;
+        out.header.comm.contentLength = 0;
+        
+        return out;
     }
 
     CommunicationPacket text(std::string text){
@@ -18,13 +20,30 @@ namespace Communication {
         output.header.comm.contentLength = text.length();
 
 
-        for (int i = 0; i < text.length(); i++){
-            output.content.content[i] = text[i];
-            std::cout << i << " : " << text[i] << "\n";
-
+        for (int i = 0; i < (int)text.length(); i++){
+            output.content.bytes[i] = text[i];
         }
         
         return output;
+    }
+
+    CommunicationPacket closeConnection(){
+        CommunicationPacket out;
+
+        out.header.comm.communicationCode = CommunicationCode::CLOSE_CONNECTION;
+        out.header.comm.contentLength = 0;
+        
+        return out;
+    }
+
+    std::string getTextFromContent(CommunicationPacket& packet){
+        std::string out = "";
+
+        for (int i = 0; i < packet.header.comm.contentLength; i++){
+            out += packet.content.bytes[i];
+        }
+
+        return out;
     }
 
 }

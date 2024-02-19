@@ -10,7 +10,10 @@ namespace Communication {
 
     enum CommunicationCode{
         ERROR = 0,
-        TEXT
+        TEXT,
+        CLOSE_CONNECTION,
+        LIST_PLAYERS,
+        PLAY,
     };
     
     
@@ -27,7 +30,7 @@ namespace Communication {
     };
 
     struct CommunicationContent{
-        char content[MAX_CONTENT_SIZE];
+        char bytes[MAX_CONTENT_SIZE];
     };
 
     struct CommunicationPacket{
@@ -35,9 +38,12 @@ namespace Communication {
         CommunicationContent content;
     };
 
+    std::string getTextFromContent(CommunicationPacket& packet);
+
     // response utility functions
     CommunicationPacket error();
     CommunicationPacket text(std::string text);
+    CommunicationPacket closeConnection();
 
 }
 
