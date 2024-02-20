@@ -254,7 +254,7 @@ namespace Server{
         if (p.header.comm.communicationCode == Communication::CommunicationCode::TEXT && res == server->getInfo().password){
             server->sendMessage(socketFileDescriptor, Communication::text("Correct password"));
             server->sendMessage(socketFileDescriptor, Communication::text("Your id is " + std::to_string(userId)));
-            game->addUser(userId);
+            game->addUser(userId, this);
             mainLoop();
         }else {
             closeHandler();
@@ -286,12 +286,43 @@ namespace Server{
         shouldContinue = false;
     }
 
+    void ClientInteractionHandler::startedPlaying(bool isHost, int hostId, int playerId, std::string& word){
+        
+        server->sendMessage(socketFileDescriptor, Communication::play());
+        
+        std::cout << word << "\n";
+        std::string censoredWord = "";
+        for (int i = 0; i < (int)word.length(); i++){
+            censoredWord += '_';
+        }
+        
+        server->sendMessage(socketFileDescriptor, Communication::text("Game started"));
+
+        if (isHost){
+            server->sendMessage(socketFileDescriptor, Communication::text("You are the host."));
+            server->sendMessage(socketFileDescriptor, Communication::text("Player " + std::to_string(playerId) + " is the player"));
+        }else {
+            server->sendMessage(socketFileDescriptor, Communication::text("You are the player."));
+            server->sendMessage(socketFileDescriptor, Communication::text("Player " + std::to_string(playerId) + " is the host"));
+        }
+        server->sendMessage(socketFileDescriptor, Communication::text("The word is " + (isHost ? word : censoredWord)));
+
+
+
+
+
+    }
+
 
     void ClientInteractionHandler::respondToPacket(Communication::CommunicationPacket packet){
         switch (packet.header.comm.communicationCode) {
             default:
             case Communication::CommunicationCode::ERROR:
+                server->sendMessage(socketFileDescriptor, Communication::text("Error occured closing connection"));
+                closeHandler();
+                return;
             case Communication::CommunicationCode::CLOSE_CONNECTION:
+                server->sendMessage(socketFileDescriptor, Communication::text("Goodbye"));
                 closeHandler();
                 return;
             case Communication::CommunicationCode::LIST_PLAYERS:
@@ -306,8 +337,35 @@ namespace Server{
                 return;
             case Communication::CommunicationCode::TEXT:
                 server->sendMessage(socketFileDescriptor, Communication::text("TODO this"));
-                break;
+                server->sendMessage(socketFileDescriptor, Communication::text(Communication::getTextFromContent(packet)));
+
+                return;
             case Communication::CommunicationCode::PLAY:
+                if (packet.header.comm.contentLength < 2 || game->isUserPlaying(userId)){
+                    server->sendMessage(socketFileDescriptor, Communication::error());
+                    return;
+                }
+                
+                // decode play packet
+                int opponentId;
+                std::string word = "";
+                Communication::readPlayPacket(packet, opponentId, word);
+
+
+                // check if game can happen
+                if (!game->doesUserExist(opponentId)){
+                    server->sendMessage(socketFileDescriptor, Communication::text("Opponent not found"));
+                    return;
+                }
+
+                // check if opponent is in game
+                if (game->isUserPlaying(opponentId)){
+                    server->sendMessage(socketFileDescriptor, Communication::text("Opponent is currently in game"));
+                    return;
+                }
+
+                // start game
+                game->startGame(word, userId, opponentId);
 
                 return;
 

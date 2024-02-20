@@ -2,6 +2,7 @@
 #define COMMUNICATION_STRUCT
 
 #include <string>
+#include "../utils/utils.h"
 
 namespace Communication {
 
@@ -15,6 +16,8 @@ namespace Communication {
         LIST_PLAYERS,
         PLAY,
     };
+
+    
     
     
     
@@ -44,6 +47,8 @@ namespace Communication {
     CommunicationPacket error();
     CommunicationPacket text(std::string text);
     CommunicationPacket closeConnection();
+    void readPlayPacket(CommunicationPacket& packet, int& outId, std::string& outWord);
+    CommunicationPacket play();
 
 }
 

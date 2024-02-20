@@ -52,6 +52,7 @@ namespace Server {
             ~ClientInteractionHandler();
             void beginInteraction();
             void mainLoop();
+            void startedPlaying(bool isHost, int hostId, int playerId, std::string& word);
 
         
     };

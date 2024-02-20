@@ -13,8 +13,10 @@
 
 [ ] MAIN FUNCTIONALITY
     [X] Passwords
-    [ ] List players
+    [X] List players
     [X] User threads
+    [ ] Phantom letters
+    [ ] Client termination sometimes causes a server crash
     [ ] Game
 
 [ ] Misc

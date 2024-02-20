@@ -46,4 +46,25 @@ namespace Communication {
         return out;
     }
 
+    void readPlayPacket(CommunicationPacket& packet, int& outId, std::string& outWord){
+        // read player id
+        outId = Utils::readIntFromBytes(packet.content.bytes, 0);
+        outWord = "";
+        // read word
+        for (int i = 4; i < packet.header.comm.contentLength; i++){
+            outWord += packet.content.bytes[i];
+            std::cout << i << " " <<  packet.content.bytes[i] << "\n";
+        }
+    }
+
+
+    CommunicationPacket play(){
+        CommunicationPacket output;
+        output.header.comm.communicationCode = CommunicationCode::PLAY;
+        output.header.comm.contentLength = 0;
+        return output;
+
+
+    }
+
 }
