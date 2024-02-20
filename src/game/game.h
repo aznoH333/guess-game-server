@@ -4,6 +4,7 @@
 #include <map>
 #include <vector>
 #include <string>
+#include "../server/communicationStruct.h"
 
 // pre declaration
 namespace Server {
@@ -11,6 +12,8 @@ namespace Server {
 };
 
 namespace Game{
+    class GameManager;
+    
     struct Player{
         int id;
         bool isPlaying;
@@ -23,12 +26,22 @@ namespace Game{
             std::string word;
             int host;
             int player;
+            Game::GameManager* gameManager;
+            int hintCount = 0;
+            int guessCount = 0;
+            int gameId;
+
+            void sendToBothPlayers(Communication::CommunicationPacket packet);
 
         public:
-            Match(std::string word, int host, int player);
+            Match(std::string word, int host, int player, GameManager* gameManager, int gameId);
             bool isGuessCorrect(std::string word);
             void guess(std::string word);
             void hint(std::string hint);
+            void printStats();
+            bool isPlayerHost(int userId);
+            int getHostId();
+            int getPlayerId();
     };
 
     
@@ -46,7 +59,10 @@ namespace Game{
             bool doesUserExist(int userId);
             std::vector<int> listAllPlayers();
             void removeUser(int userId);
-            void startGame(std::string word, int user1Id, int user2Id);
+            int startGame(std::string word, int user1Id, int user2Id);
+            Match& getGame(int gameId);
+            Player& getPlayer(int playerId);
+            void quitGame(int gameId);
         
     };
 }

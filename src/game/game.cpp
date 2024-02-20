@@ -39,9 +39,9 @@ namespace Game {
 
         return out;
     }
-
-    void GameManager::startGame(std::string word, int hostId, int playerId){
-        games.emplace(nextGameId, Match(word, hostId, playerId));
+    // returns game id
+    int GameManager::startGame(std::string word, int hostId, int playerId){
+        games.emplace(nextGameId, Game::Match(word, hostId, playerId, this, nextGameId));
         Player& host = userList[hostId];
         Player& player = userList[playerId];
         // set statuses
@@ -52,27 +52,86 @@ namespace Game {
         player.isPlaying = true;
         player.gameId = nextGameId;
 
-        nextGameId++;
         // send messages
         host.handler->startedPlaying(true, hostId, playerId, word);
         player.handler->startedPlaying(false, hostId, playerId, word);
 
+        return nextGameId++;
     }
+
+    Match& GameManager::getGame(int gameId){
+        return games.at(gameId);
+    }
+
+    Player& GameManager::getPlayer(int playerId){
+        return userList.at(playerId);
+    }
+
+    void GameManager::quitGame(int gameId){
+        Match* m = &getGame(gameId);
+        
+        // remove players from game
+        userList[m->getHostId()].isPlaying = false;
+        userList[m->getPlayerId()].isPlaying = false;
+
+        games.erase(gameId);
+    }
+
     // --== game ==--
-    Match::Match(std::string word, int host, int player){
+    Game::Match::Match(std::string word, int host, int player, GameManager* gameManager, int gameId){
         this->word = word;
         this->host = host;
         this->player = player;
+        this->gameManager = gameManager;
+        this->gameId = gameId;
     }
 
-    bool Match::Match::isGuessCorrect(std::string word){
-        return false;
+    bool Match::isGuessCorrect(std::string word){
+        return word == this->word;
     }
-    void Match::Match::guess(std::string word){
+    void Match::guess(std::string word){
+        guessCount++;
+        sendToBothPlayers(Communication::text("Guess : " + word));
 
-    }
-    void Match::Match::hint(std::string hint){
 
+        if (isGuessCorrect(word)){
+            sendToBothPlayers(Communication::text(word + " is correct!"));
+
+            printStats();
+            sendToBothPlayers(Communication::text("Game over"));
+            sendToBothPlayers(Communication::play());
+            gameManager->quitGame(gameId);
+
+
+
+        }
     }
+
+    void Match::hint(std::string hint){
+        hintCount++;
+        sendToBothPlayers(Communication::text("Hint : " + hint));
+    }
+
+    void Match::printStats(){
+        sendToBothPlayers(Communication::text("Hints given : " + std::to_string(hintCount)));
+        sendToBothPlayers(Communication::text("Guesses : " + std::to_string(guessCount)));
+    }
+
+    void Match::sendToBothPlayers(Communication::CommunicationPacket packet){
+        gameManager->getPlayer(player).handler->sendMessage(packet);
+        gameManager->getPlayer(host).handler->sendMessage(packet);
+    }
+
+    bool Match::isPlayerHost(int userId){
+        return userId == host;
+    }
+
+    int Match::getHostId(){
+        return host;
+    }
+    int Match::getPlayerId(){
+        return player;
+    }
+
 
 }

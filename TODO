@@ -15,11 +15,12 @@
     [X] Passwords
     [X] List players
     [X] User threads
-    [ ] Phantom letters
+    [X] Phantom letters
     [ ] Client termination sometimes causes a server crash
-    [ ] Game
+    // bad timeout handling???
+    [X] Game
 
 [ ] Misc
     [ ] Figure out unix sockets
     [ ] Observer website ._.
-    [ ] Threads?
+    [X] Threads?

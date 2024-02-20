@@ -53,7 +53,6 @@ namespace Communication {
         // read word
         for (int i = 4; i < packet.header.comm.contentLength; i++){
             outWord += packet.content.bytes[i];
-            std::cout << i << " " <<  packet.content.bytes[i] << "\n";
         }
     }
 

@@ -303,7 +303,7 @@ namespace Server{
             server->sendMessage(socketFileDescriptor, Communication::text("Player " + std::to_string(playerId) + " is the player"));
         }else {
             server->sendMessage(socketFileDescriptor, Communication::text("You are the player."));
-            server->sendMessage(socketFileDescriptor, Communication::text("Player " + std::to_string(playerId) + " is the host"));
+            server->sendMessage(socketFileDescriptor, Communication::text("Player " + std::to_string(hostId) + " is the host"));
         }
         server->sendMessage(socketFileDescriptor, Communication::text("The word is " + (isHost ? word : censoredWord)));
 
@@ -311,6 +311,10 @@ namespace Server{
 
 
 
+    }
+
+    void ClientInteractionHandler::sendMessage(Communication::CommunicationPacket packet){
+        server->sendMessage(socketFileDescriptor, packet);
     }
 
 
@@ -336,12 +340,20 @@ namespace Server{
                 }
                 return;
             case Communication::CommunicationCode::TEXT:
-                server->sendMessage(socketFileDescriptor, Communication::text("TODO this"));
-                server->sendMessage(socketFileDescriptor, Communication::text(Communication::getTextFromContent(packet)));
+                {
+                    Game::Match& m = game->getGame(gameId);
+                    bool isHost = m.isPlayerHost(userId);
+                    std::string text = Communication::getTextFromContent(packet);
 
+                    if (isHost){
+                        m.hint(text);
+                    }else {
+                        m.guess(text);
+                    }
+                }
                 return;
             case Communication::CommunicationCode::PLAY:
-                if (packet.header.comm.contentLength < 2 || game->isUserPlaying(userId)){
+                if (packet.header.comm.contentLength < 4 || game->isUserPlaying(userId)){
                     server->sendMessage(socketFileDescriptor, Communication::error());
                     return;
                 }
@@ -351,6 +363,7 @@ namespace Server{
                 std::string word = "";
                 Communication::readPlayPacket(packet, opponentId, word);
 
+                
 
                 // check if game can happen
                 if (!game->doesUserExist(opponentId)){
