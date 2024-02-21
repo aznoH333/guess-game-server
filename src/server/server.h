@@ -79,6 +79,9 @@ namespace Server {
 
     class Server{
         
+        private:
+            void waitForMessage(int socketFileDescriptor, char* resultBuffer, unsigned long size, int flags);
+
         
         protected:
             // communication stuff
@@ -98,7 +101,7 @@ namespace Server {
             virtual void start();
             void reapThreads();
             virtual void sendMessage(int socketFileDescriptor, Communication::CommunicationPacket message);
-            virtual Communication::CommunicationPacket waitForResponse(int socketFileDescriptor);
+            Communication::CommunicationPacket waitForResponse(int socketFileDescriptor);
             void closeSocket(int socketFileDescriptor);
             ServerInitInfo& getInfo();
             void removeHandler(int userId);
@@ -107,16 +110,10 @@ namespace Server {
     };
 
     class TCPServer : public Server{
-        private:
-            void waitForMessage(int socketFileDescriptor, char* resultBuffer, unsigned long size, int flags);
-
         public:
             void init(ServerInitInfo info, Game::GameManager* gameManager);
             void start();
-
             void sendMessage(int socketFileDescriptor, Communication::CommunicationPacket message);
-            Communication::CommunicationPacket waitForResponse(int socketFileDescriptor);
-            //void closeSocket(int socketFileDescriptor);
     };
 
     class UnixServer : public Server{
@@ -124,8 +121,6 @@ namespace Server {
             void init(ServerInitInfo info, Game::GameManager* gameManager);
             void start();
             void sendMessage(int socketFileDescriptor, Communication::CommunicationPacket message);
-            Communication::CommunicationPacket waitForResponse(int socketFileDescriptor);
-            //void closeSocket(int socketFileDescriptor);
     };
 
     

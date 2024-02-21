@@ -3,7 +3,7 @@
 
 int main(void)
 {
-    Server::TCPServer server = Server::TCPServer();
+    Server::UnixServer server = Server::UnixServer();
     Game::GameManager manager = Game::GameManager();
     server.init(Server::getInitInfo(), &manager);
     server.start();

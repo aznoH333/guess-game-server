@@ -32,6 +32,19 @@ namespace Server{
         }
     }
 
+    void Server::waitForMessage(int socketFileDescriptor, char* resultBuffer, unsigned long size, int flags){
+        while (true) {
+            int result = recv(socketFileDescriptor, resultBuffer, size, flags);
+
+            if (result == -1){
+                perror("recv");
+                exit(-1);
+            }else if (result != 0){
+                break;
+            }
+        }
+    }
+
     ServerInitInfo& Server::getInfo(){
         return info;
     }
@@ -45,6 +58,15 @@ namespace Server{
         close(socketFileDescriptor);
     }
 
+    Communication::CommunicationPacket Server::waitForResponse(int socketFileDescriptor){
+        Communication::CommunicationPacket result;
+        
+        waitForMessage(socketFileDescriptor, result.header.bytes, sizeof(Communication::CommUnion), 0);
+        if (result.header.comm.contentLength > 0){
+            waitForMessage(socketFileDescriptor, result.content.bytes, sizeof(Communication::CommUnion), 0);
+        }
+        return result;
+    }
     
 
     void Server::dispose(){
@@ -70,8 +92,7 @@ namespace Server{
         
     }
 
-    Communication::CommunicationPacket Server::waitForResponse(int socketFileDescriptor){
-    }
+    
 
 
     
@@ -284,41 +305,7 @@ namespace Server{
 
         }
     }
-    Communication::CommunicationPacket UnixServer::waitForResponse(int socketFileDescriptor){
-        int timeOut = 20000000;
-        Communication::CommunicationPacket result;
-        int numberOfBytes;
-        while(timeOut > 0){
-            timeOut--;
-            numberOfBytes = read(socketFileDescriptor, result.header.bytes, sizeof(Communication::CommUnion));
-
-            if (numberOfBytes == -1) {
-                perror("read");
-                exit(1);
-            }else if (numberOfBytes != 0){
-                break;
-            }
-
-                    
-        }
-        if (result.header.comm.contentLength > 0){
-            int timeOut = 20000000;
-            while (timeOut > 0) {
-                timeOut--;
-
-                numberOfBytes = read(socketFileDescriptor, result.content.bytes, result.header.comm.contentLength);
-
-                if (numberOfBytes == -1) {
-                    perror("read");
-                    exit(1);
-                }else if (numberOfBytes != 0){
-                    break;
-                }
-            }
-        }
-        // TODO timeouts??
-        return result;
-    }
+    
     
     void UnixServer::start(){
         std::cout << "Server listening socket " << "TODO this" << "\n";

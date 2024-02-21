@@ -76,28 +76,9 @@ namespace Server {
         }
     }
 
-    void TCPServer::waitForMessage(int socketFileDescriptor, char* resultBuffer, unsigned long size, int flags){
-        while (true) {
-            int result = recv(socketFileDescriptor, resultBuffer, size, flags);
+    
 
-            if (result == -1){
-                perror("recv");
-                exit(-1);
-            }else if (result != 0){
-                break;
-            }
-        }
-    }
-
-    Communication::CommunicationPacket TCPServer::waitForResponse(int socketFileDescriptor){
-        Communication::CommunicationPacket result;
-        
-        waitForMessage(socketFileDescriptor, result.header.bytes, sizeof(Communication::CommUnion), 0);
-        if (result.header.comm.contentLength > 0){
-            waitForMessage(socketFileDescriptor, result.content.bytes, sizeof(Communication::CommUnion), 0);
-        }
-        return result;
-    }
+    
     
 
     void TCPServer::start(){
