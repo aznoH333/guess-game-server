@@ -13,144 +13,9 @@ namespace Server{
     }
 
 
-    void sigchld_handler(int s)
-    {
-        // waitpid() might overwrite errno, so we save and restore it:
-        int saved_errno = errno;
-
-        while(waitpid(-1, NULL, WNOHANG) > 0);
-
-        errno = saved_errno;
-    }
-
-    void *get_in_addr(struct sockaddr *sa)
-    {
-        if (sa->sa_family == AF_INET) {
-            return &(((struct sockaddr_in*)sa)->sin_addr);
-        }
-
-        return &(((struct sockaddr_in6*)sa)->sin6_addr);
-    }
+    
 
     // --== Server ==--
-
-
-    void Server::init(ServerInitInfo info, Game::GameManager* gameManager){
-        this->info = info;
-        this->gameManager = gameManager;
-        addrinfo hints; 
-        addrinfo* servinfo;
-        addrinfo* p;
-        struct sigaction sa;
-
-
-
-        std::cout << "Started server init \n";
-        
-        memset(&hints, 0, sizeof(hints));
-        hints.ai_family = AF_UNSPEC;
-        hints.ai_socktype = SOCK_STREAM;
-        hints.ai_flags = AI_PASSIVE;
-
-
-        int returnValue = getaddrinfo(NULL, info.serverPort.c_str(), &hints, &servinfo);
-        if (returnValue != 0) {
-            fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(returnValue));
-            exit(1);
-        }
-
-        // loop through all the results and bind to the first we can
-        for(p = servinfo; p != NULL; p = p->ai_next) {
-            if ((socketFileDescriptor = socket(p->ai_family, p->ai_socktype,
-                    p->ai_protocol)) == -1) {
-                perror("server: socket");
-                continue;
-            }
-
-            if (setsockopt(socketFileDescriptor, SOL_SOCKET, SO_REUSEADDR, &yes,sizeof(int)) == -1) {
-                perror("setsockopt");
-                exit(1);
-            }
-
-            if (bind(socketFileDescriptor, p->ai_addr, p->ai_addrlen) == -1) {
-                close(socketFileDescriptor);
-                perror("server: bind");
-                continue;
-            }
-
-            break;
-        }
-
-        freeaddrinfo(servinfo); // all done with this structure
-
-        if (p == NULL)  {
-            fprintf(stderr, "server: failed to bind\n");
-            exit(1);
-        }
-
-        if (listen(socketFileDescriptor, info.queueBackLog) == -1) {
-            perror("listen");
-            exit(1);
-        }
-
-        sa.sa_handler = sigchld_handler; // reap all dead processes
-        sigemptyset(&sa.sa_mask);
-        sa.sa_flags = SA_RESTART;
-        if (sigaction(SIGCHLD, &sa, NULL) == -1) {
-            perror("sigaction");
-            exit(1);
-        }
-
-        std::cout << "Server init complete \n";
-
-    }
-
-    void Server::start(){
-        std::cout << "Server listening on port " << info.serverPort << "\n";
-
-        sockaddr_storage clientAddress;
-        socklen_t sin_size;
-
-
-        // start reaper
-        userHandlerReaper = std::thread(&Server::reapThreads, this);
-
-        // start loop
-        while(true) {
-            char clientIp[INET6_ADDRSTRLEN];
-
-            sin_size = sizeof(clientAddress);
-            newSocketFileDescriptor = accept(socketFileDescriptor, (struct sockaddr *)&clientAddress, &sin_size);
-            if (newSocketFileDescriptor == -1) {
-                perror("accept");
-                continue;
-            }
-
-            inet_ntop(clientAddress.ss_family,
-                get_in_addr((struct sockaddr *)&clientAddress),
-                clientIp, sizeof(clientIp));
-            printf("server: got connection from %s\n", clientIp);
-            
-            
-            int nextId = gameManager->getNextUniqueId();
-            // todo this shouldnt work or it leaks memory
-            ClientInteractionHandler* c = new ClientInteractionHandler(newSocketFileDescriptor, this, clientIp, gameManager, nextId);
-            //c->beginInteraction();
-            std::thread* thread = new std::thread(&ClientInteractionHandler::beginInteraction, c);
-            ClientAndThread cat = {
-                c,
-                thread,
-            };
-
-            clientHandlers[nextId] = cat;
-            
-
-            
-
-
-        }
-    }
-
     void Server::reapThreads(){
         while(true){
             for (std::pair<int, ClientAndThread> p : clientHandlers){
@@ -167,70 +32,53 @@ namespace Server{
         }
     }
 
-    void Server::sendMessage(int socketFileDescriptor, Communication::CommunicationPacket message){
-        
-        send(socketFileDescriptor, message.header.bytes, sizeof(Communication::CommUnion), 0);
-        
-        if (message.header.comm.contentLength > 0){
-            send(socketFileDescriptor, message.content.bytes, message.header.comm.contentLength, 0);
-        }
-        
+    ServerInitInfo& Server::getInfo(){
+        return info;
     }
 
     void Server::removeHandler(int userId){
         clientHandlers[userId].shouldBeDeleted = true;
     };
 
-
-    Communication::CommunicationPacket Server::waitForResponse(int socketFileDescriptor){
-        int timeOut = 20000000;
-        Communication::CommunicationPacket result;
-        int numberOfBytes;
-        while(timeOut > 0){
-            timeOut--;
-            numberOfBytes = recv(socketFileDescriptor, result.header.bytes, sizeof(Communication::CommUnion), 0);
-
-            if (numberOfBytes == -1) {
-                perror("recv");
-                exit(1);
-            }else if (numberOfBytes != 0){
-                break;
-            }
-
-                    
-        }
-        if (result.header.comm.contentLength > 0){
-            int timeOut = 20000000;
-            while (timeOut > 0) {
-                timeOut--;
-
-                numberOfBytes = recv(socketFileDescriptor, result.content.bytes, result.header.comm.contentLength, 0);
-
-                if (numberOfBytes == -1) {
-                    perror("recv");
-                    exit(1);
-                }else if (numberOfBytes != 0){
-                    break;
-                }
-            }
-        }
-        // TODO timeouts??
-        return result;
-    }
-
-
     void Server::closeSocket(int socketFileDescriptor){
         sendMessage(socketFileDescriptor, Communication::closeConnection());
         close(socketFileDescriptor);
     }
 
+    
+
     void Server::dispose(){
         // TODO
     }
 
-    ServerInitInfo& Server::getInfo(){
-        return info;
+    /* 
+        Virtual function declarations
+        theese should never be called
+    */
+    void Server::sendMessage(int socketFileDescriptor, Communication::CommunicationPacket message){
+        std::cout << "Dont use server use unixServer or tcpServer \n";
+        exit(-1);
     }
+
+    
+    void Server::init(ServerInitInfo info, Game::GameManager* gameManager){
+        
+
+    }
+
+    void Server::start(){
+        
+    }
+
+    Communication::CommunicationPacket Server::waitForResponse(int socketFileDescriptor){
+    }
+
+
+    
+
+    
+
+    
 
 
 
@@ -382,6 +230,126 @@ namespace Server{
 
                 return;
 
+        }
+    }
+
+    
+
+    // --== Unix server ==--
+    void UnixServer::init(ServerInitInfo info, Game::GameManager* gameManager){
+        this->info = info;
+        this->gameManager = gameManager;
+        
+
+
+        socketFileDescriptor = socket(AF_UNIX, SOCK_STREAM, 0);
+        if (socketFileDescriptor == -1){
+            perror("socket");
+            exit(-1);
+        }
+        int option = 1;
+
+        setsockopt(socketFileDescriptor, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
+        unlink ("/tmp/resol.sock");
+        struct sockaddr_un addr;
+        memset(&addr, 0, sizeof(sockaddr_un));
+
+        /* Bind socket to socket name. */
+
+        addr.sun_family = AF_UNIX;
+        strncpy(addr.sun_path, "/tmp/resol.sock", sizeof(addr.sun_path) - 1);
+
+        int ret = bind(socketFileDescriptor, (const struct sockaddr *) &addr,
+                sizeof(sockaddr_un));
+        if (ret == -1) {
+            perror("bind");
+            exit(EXIT_FAILURE);
+        }
+
+        ret = listen(socketFileDescriptor, info.queueBackLog);
+        if (ret == -1) {
+            perror("listen");
+            exit(EXIT_FAILURE);
+        }
+
+
+        std::cout << "Server init complete \n";
+    }
+    void UnixServer::sendMessage(int socketFileDescriptor, Communication::CommunicationPacket message){
+        write(socketFileDescriptor, message.header.bytes, sizeof(Communication::CommUnion));
+
+        if (message.header.comm.contentLength > 0){
+            // send content
+            write(socketFileDescriptor, message.content.bytes, message.header.comm.contentLength);
+
+        }
+    }
+    Communication::CommunicationPacket UnixServer::waitForResponse(int socketFileDescriptor){
+        int timeOut = 20000000;
+        Communication::CommunicationPacket result;
+        int numberOfBytes;
+        while(timeOut > 0){
+            timeOut--;
+            numberOfBytes = read(socketFileDescriptor, result.header.bytes, sizeof(Communication::CommUnion));
+
+            if (numberOfBytes == -1) {
+                perror("read");
+                exit(1);
+            }else if (numberOfBytes != 0){
+                break;
+            }
+
+                    
+        }
+        if (result.header.comm.contentLength > 0){
+            int timeOut = 20000000;
+            while (timeOut > 0) {
+                timeOut--;
+
+                numberOfBytes = read(socketFileDescriptor, result.content.bytes, result.header.comm.contentLength);
+
+                if (numberOfBytes == -1) {
+                    perror("read");
+                    exit(1);
+                }else if (numberOfBytes != 0){
+                    break;
+                }
+            }
+        }
+        // TODO timeouts??
+        return result;
+    }
+    
+    void UnixServer::start(){
+        std::cout << "Server listening socket " << "TODO this" << "\n";
+
+        sockaddr_storage clientAddress;
+        socklen_t sin_size;
+
+
+        // start reaper
+        userHandlerReaper = std::thread(&Server::reapThreads, this);
+
+        // start loop
+        while(true) {
+            
+            newSocketFileDescriptor = accept(socketFileDescriptor, NULL, NULL);
+            if (newSocketFileDescriptor == -1) {
+                perror("accept");
+                continue;
+            }
+            
+            int nextId = gameManager->getNextUniqueId();
+            // todo this shouldnt work or it leaks memory
+            ClientInteractionHandler* c = new ClientInteractionHandler(newSocketFileDescriptor, this, "beans", gameManager, nextId);
+            //c->beginInteraction();
+            std::thread* thread = new std::thread(&ClientInteractionHandler::beginInteraction, c);
+            ClientAndThread cat = {
+                c,
+                thread,
+            };
+
+            clientHandlers[nextId] = cat;
         }
     }
 }

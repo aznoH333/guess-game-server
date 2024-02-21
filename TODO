@@ -21,6 +21,14 @@
     [X] Game
 
 [ ] Misc
-    [ ] Figure out unix sockets
+    [X] Figure out unix sockets
+    [ ] All of the names are wrong
+    [ ] The code is sometimes messy
+        [ ] Server
+        [ ] Communication struct
+        [ ] Game
     [ ] Observer website ._.
+    [ ] Rewrite the packets
+    [ ] again
+    [ ] Server config
     [X] Threads?

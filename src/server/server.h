@@ -17,8 +17,14 @@
 #include <arpa/inet.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <sys/un.h>
 
 namespace Server {
+    enum ServerType{
+        UNIX_SOCKET,
+        TCP,
+    };
+    
     struct ServerInitInfo{
         std::string serverPort;
         int queueBackLog;
@@ -45,9 +51,13 @@ namespace Server {
             int gameId = 0;
             
 
+
+
             void closeHandler();
             void respondToPacket(Communication::CommunicationPacket packet);
-            
+        
+
+
         public:
             ClientInteractionHandler(int socketFileDescriptor, Server* server, std::string clientIp, Game::GameManager* game, int userId);
             ~ClientInteractionHandler();
@@ -68,8 +78,9 @@ namespace Server {
     
 
     class Server{
-        private:
-            
+        
+        
+        protected:
             // communication stuff
             int socketFileDescriptor;
             int newSocketFileDescriptor;
@@ -77,19 +88,17 @@ namespace Server {
             std::map<int, ClientAndThread> clientHandlers;
             int yes=1; // ????
             std::thread userHandlerReaper;
-
-
             // init stuff
             ServerInitInfo info;
 
             
 
         public:
-            void init(ServerInitInfo info, Game::GameManager* gameManager);
-            void start();
+            virtual void init(ServerInitInfo info, Game::GameManager* gameManager);
+            virtual void start();
             void reapThreads();
-            void sendMessage(int socketFileDescriptor, Communication::CommunicationPacket message);
-            Communication::CommunicationPacket waitForResponse(int socketFileDescriptor);
+            virtual void sendMessage(int socketFileDescriptor, Communication::CommunicationPacket message);
+            virtual Communication::CommunicationPacket waitForResponse(int socketFileDescriptor);
             void closeSocket(int socketFileDescriptor);
             ServerInitInfo& getInfo();
             void removeHandler(int userId);
@@ -97,7 +106,27 @@ namespace Server {
             void dispose();
     };
 
-    
+    class TCPServer : public Server{
+        private:
+            void waitForMessage(int socketFileDescriptor, char* resultBuffer, unsigned long size, int flags);
+
+        public:
+            void init(ServerInitInfo info, Game::GameManager* gameManager);
+            void start();
+
+            void sendMessage(int socketFileDescriptor, Communication::CommunicationPacket message);
+            Communication::CommunicationPacket waitForResponse(int socketFileDescriptor);
+            //void closeSocket(int socketFileDescriptor);
+    };
+
+    class UnixServer : public Server{
+        public:
+            void init(ServerInitInfo info, Game::GameManager* gameManager);
+            void start();
+            void sendMessage(int socketFileDescriptor, Communication::CommunicationPacket message);
+            Communication::CommunicationPacket waitForResponse(int socketFileDescriptor);
+            //void closeSocket(int socketFileDescriptor);
+    };
 
     
 }
