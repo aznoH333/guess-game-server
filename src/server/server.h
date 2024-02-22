@@ -22,7 +22,7 @@
 
 
 namespace Server {
-    
+    const int BACKLOG_SIZE = 10;
     
     struct ServerInitInfo{
         std::string serverPort;
@@ -31,7 +31,7 @@ namespace Server {
     };
 
 
-    ServerInitInfo getInitInfo();
+    Server* initServer();
 
 
     class Server{
@@ -51,32 +51,39 @@ namespace Server {
             int yes=1; // ????
             std::thread userHandlerReaper;
             // init stuff
-            ServerInitInfo info;
+            std::string password;
 
             
 
         public:
-            virtual void init(ServerInitInfo info, Game::GameManager* gameManager);
+            virtual void init(Game::GameManager* gameManager);
             virtual void start();
             void reapThreads();
             virtual void sendMessage(int socketFileDescriptor, Communication::CommunicationPacket message);
             Communication::CommunicationPacket waitForResponse(int socketFileDescriptor);
             void closeSocket(int socketFileDescriptor);
-            ServerInitInfo& getInfo();
             void removeHandler(int userId);
+            std::string& getPassword();
             
     };
 
     class TCPServer : public Server{
+        private:
+            std::string port;
+        
         public:
-            void init(ServerInitInfo info, Game::GameManager* gameManager);
+            TCPServer(std::string port, std::string password);
+            void init(Game::GameManager* gameManager);
             void start();
             void sendMessage(int socketFileDescriptor, Communication::CommunicationPacket message);
     };
 
     class UnixServer : public Server{
+        private:
+            std::string address;
         public:
-            void init(ServerInitInfo info, Game::GameManager* gameManager);
+            UnixServer(std::string address, std::string password);
+            void init(Game::GameManager* gameManager);
             void start();
             void sendMessage(int socketFileDescriptor, Communication::CommunicationPacket message);
     };

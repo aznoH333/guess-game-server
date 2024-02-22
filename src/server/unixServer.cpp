@@ -4,8 +4,13 @@
 
 namespace Server {
     // --== Unix server ==--
-    void UnixServer::init(ServerInitInfo info, Game::GameManager* gameManager){
-        this->info = info;
+    UnixServer::UnixServer(std::string address, std::string password){
+        this->password = password;
+        this->address = address;
+    }
+
+
+    void UnixServer::init(Game::GameManager* gameManager){
         this->gameManager = gameManager;
         
 
@@ -18,14 +23,14 @@ namespace Server {
         int option = 1;
 
         setsockopt(socketFileDescriptor, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
-        unlink ("/tmp/resol.sock");
+        unlink (address.c_str());
         struct sockaddr_un addr;
         memset(&addr, 0, sizeof(sockaddr_un));
 
         /* Bind socket to socket name. */
 
         addr.sun_family = AF_UNIX;
-        strncpy(addr.sun_path, "/tmp/resol.sock", sizeof(addr.sun_path) - 1);
+        strncpy(addr.sun_path, address.c_str(), sizeof(addr.sun_path) - 1);
 
         int ret = bind(socketFileDescriptor, (const struct sockaddr *) &addr,
                 sizeof(sockaddr_un));
@@ -34,7 +39,7 @@ namespace Server {
             exit(EXIT_FAILURE);
         }
 
-        ret = listen(socketFileDescriptor, info.queueBackLog);
+        ret = listen(socketFileDescriptor, BACKLOG_SIZE);
         if (ret == -1) {
             perror("listen");
             exit(EXIT_FAILURE);
@@ -55,7 +60,7 @@ namespace Server {
     
     
     void UnixServer::start(){
-        std::cout << "Server listening socket " << "TODO this" << "\n";
+        std::cout << "Server listening socket " << address << "\n";
 
         // start reaper
         userHandlerReaper = std::thread(&Server::reapThreads, this);

@@ -4,8 +4,8 @@
 
 int main(void)
 {
-    Server::TCPServer server = Server::TCPServer();
+    Server::Server* server = Server::initServer();
     Game::GameManager manager = Game::GameManager();
-    server.init(Server::getInitInfo(), &manager);
-    server.start();
+    server->init(&manager);
+    server->start();
 }

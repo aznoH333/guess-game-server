@@ -3,14 +3,43 @@
 
 namespace Server{
     // --== misc utility ==--
-    ServerInitInfo getInitInfo(){
-        // temporary hard coded values
+    Server* initTcp(std::string password){
+        std::cout << "choose server port \n";
+        std::string input;
+        std::getline(std::cin, input);
 
-        return {
-            "3490",
-            10,
-            "bello"
-        };
+        return new TCPServer(input, password);
+
+    }
+
+    Server* initUnix(std::string password){
+        std::cout << "choose socket file name \n";
+        std::string input;
+        std::getline(std::cin, input);
+
+        return new UnixServer("/tmp/" + input + ".sock", password);
+    }
+    
+    
+    
+    Server* initServer(){
+        std::string input;
+        
+        std::cout << "choose password \n";
+        std::getline(std::cin, input);
+        std::string password = input;
+        
+        std::cout << "choose server type \n";
+        std::cout << "1) tcp \n2) unix \n";
+
+        std::getline(std::cin, input);
+
+        if (input[0] == '2'){
+            return initUnix(password);
+        }else {
+            return initTcp(password);
+        }
+
     }
 
 
@@ -46,9 +75,6 @@ namespace Server{
         }
     }
 
-    ServerInitInfo& Server::getInfo(){
-        return info;
-    }
 
     void Server::removeHandler(int userId){
         clientHandlers[userId].shouldBeDeleted = true;
@@ -68,6 +94,10 @@ namespace Server{
         }
         return result;
     }
+
+    std::string& Server::getPassword(){
+        return password;
+    }
     
 
     /* 
@@ -80,14 +110,13 @@ namespace Server{
     }
 
     
-    void Server::init(ServerInitInfo info, Game::GameManager* gameManager){
-        this->info = info;
+    void Server::init(Game::GameManager* gameManager){
         this->gameManager = gameManager;
 
     }
 
     void Server::start(){
-        
+        std::cout << "beans\n"; 
     }
 
     

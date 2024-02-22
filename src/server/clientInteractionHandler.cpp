@@ -18,12 +18,13 @@ namespace Server {
         std::string res = Communication::getTextFromContent(p);
 
         
-        if (p.header.comm.communicationCode == Communication::CommunicationCode::TEXT && res == server->getInfo().password){
+        if (p.header.comm.communicationCode == Communication::CommunicationCode::TEXT && res == server->getPassword()){
             server->sendMessage(socketFileDescriptor, Communication::text("Correct password"));
             server->sendMessage(socketFileDescriptor, Communication::text("Your id is " + std::to_string(userId)));
             game->addUser(userId, this);
             mainLoop();
         }else {
+            server->sendMessage(socketFileDescriptor, Communication::text("Wrong password"));
             closeHandler();
         }
         
@@ -36,7 +37,7 @@ namespace Server {
 
 
     void ClientInteractionHandler::mainLoop(){
-        server->sendMessage(socketFileDescriptor, Communication::text("Input command:"));
+        server->sendMessage(socketFileDescriptor, Communication::text("The server is listening for commands"));
         while(shouldContinue){
             Communication::CommunicationPacket packet = server->waitForResponse(socketFileDescriptor);
             respondToPacket(packet);
@@ -141,6 +142,11 @@ namespace Server {
                 // check if opponent is in game
                 if (game->isUserPlaying(opponentId)){
                     server->sendMessage(socketFileDescriptor, Communication::text("Opponent is currently in game"));
+                    return;
+                }
+
+                if (userId == opponentId){
+                    server->sendMessage(socketFileDescriptor, Communication::text("You cant play against yourself"));
                     return;
                 }
 

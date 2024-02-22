@@ -15,9 +15,16 @@ namespace Server {
     }
 
     // --== Tcp server ==--
-    void TCPServer::init(ServerInitInfo info, Game::GameManager* gameManager){
-        this->info = info;
+    TCPServer::TCPServer(std::string port, std::string password){
+        this->port = port;
+        this->password = password;
+    }
+    
+    
+    
+    void TCPServer::init(Game::GameManager* gameManager){
         this->gameManager = gameManager;
+        
 
         addrinfo hints; 
         addrinfo* servinfo;
@@ -31,7 +38,7 @@ namespace Server {
         hints.ai_flags = AI_PASSIVE;
 
 
-        int returnValue = getaddrinfo(NULL, info.serverPort.c_str(), &hints, &servinfo);
+        int returnValue = getaddrinfo(NULL, port.c_str(), &hints, &servinfo);
         if (returnValue != 0) {
             exit(1);
         }
@@ -65,7 +72,7 @@ namespace Server {
             exit(1);
         }
 
-        listen(socketFileDescriptor, info.queueBackLog);
+        listen(socketFileDescriptor, BACKLOG_SIZE);
 
         std::cout << "Server init complete \n";
     }
@@ -84,7 +91,7 @@ namespace Server {
     
 
     void TCPServer::start(){
-        std::cout << "Server listening on port " << info.serverPort << "\n";
+        std::cout << "Server listening on port " << port << "\n";
 
         sockaddr_storage clientAddress;
         socklen_t sin_size;
@@ -111,9 +118,7 @@ namespace Server {
             
             
             int nextId = gameManager->getNextUniqueId();
-            // todo this shouldnt work or it leaks memory
             ClientInteractionHandler* c = new ClientInteractionHandler(newSocketFileDescriptor, this, clientIp, gameManager, nextId);
-            //c->beginInteraction();
             std::thread* thread = new std::thread(&ClientInteractionHandler::beginInteraction, c);
             ClientAndThread cat = {
                 c,
