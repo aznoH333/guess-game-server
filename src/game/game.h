@@ -38,6 +38,7 @@ namespace Game{
             bool isGuessCorrect(std::string word);
             void guess(std::string word);
             void hint(std::string hint);
+            void giveUp();
             void printStats();
             bool isPlayerHost(int userId);
             int getHostId();

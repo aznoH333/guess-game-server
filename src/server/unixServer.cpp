@@ -1,5 +1,4 @@
 #include "server.h"
-#include "clientInteractionHandler.h"
 
 
 namespace Server {
@@ -46,40 +45,23 @@ namespace Server {
         }
 
 
-        std::cout << "Server init complete \n";
-    }
-    void UnixServer::sendMessage(int socketFileDescriptor, Communication::PacketUnion message){
-        write(socketFileDescriptor, message.bytes, sizeof(Communication::CommHeader) + message.packet.header.content.contentSize);
+        std::cout << "\nServer init complete \n";
+        std::cout << "\nServer listening on socket " << address << "\n";
 
     }
     
     
-    void UnixServer::start(){
-        std::cout << "Server listening socket " << address << "\n";
+    
+    
 
-        // start reaper
-        userHandlerReaper = std::thread(&Server::reapThreads, this);
-
-        // start loop
-        while(true) {
-            
-            newSocketFileDescriptor = accept(socketFileDescriptor, NULL, NULL);
-            if (newSocketFileDescriptor == -1) {
-                perror("accept");
-                continue;
-            }
-            
-            int nextId = gameManager->getNextUniqueId();
-            // todo this shouldnt work or it leaks memory
-            ClientInteractionHandler* c = new ClientInteractionHandler(newSocketFileDescriptor, this, "beans", gameManager, nextId);
-            //c->beginInteraction();
-            std::thread* thread = new std::thread(&ClientInteractionHandler::beginInteraction, c);
-            ClientAndThread cat = {
-                c,
-                thread,
-            };
-
-            clientHandlers[nextId] = cat;
+    void UnixServer::acceptIncommingConnection(bool& shouldSkip, std::string& clientName){
+        newSocketFileDescriptor = accept(socketFileDescriptor, NULL, NULL);
+        if (newSocketFileDescriptor == -1) {
+            perror("accept");
+            shouldSkip = true;
         }
+
+        clientName = "unix client";
+        shouldSkip = false;
     }
 }

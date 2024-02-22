@@ -4,7 +4,7 @@
 namespace Server{
     // --== misc utility ==--
     Server* initTcp(std::string password){
-        std::cout << "choose server port \n";
+        std::cout << "\nchoose server port \n";
         std::string input;
         std::getline(std::cin, input);
 
@@ -13,7 +13,7 @@ namespace Server{
     }
 
     Server* initUnix(std::string password){
-        std::cout << "choose socket file name \n";
+        std::cout << "\nchoose socket file name \n";
         std::string input;
         std::getline(std::cin, input);
 
@@ -25,11 +25,11 @@ namespace Server{
     Server* initServer(){
         std::string input;
         
-        std::cout << "choose password \n";
+        std::cout << "\nchoose password \n";
         std::getline(std::cin, input);
         std::string password = input;
         
-        std::cout << "choose server type \n";
+        std::cout << "\nchoose server type \n";
         std::cout << "1) tcp \n2) unix \n";
 
         std::getline(std::cin, input);
@@ -81,7 +81,9 @@ namespace Server{
     };
 
     void Server::closeSocket(int socketFileDescriptor){
+        
         sendMessage(socketFileDescriptor, Communication::closeConnection());
+        
         close(socketFileDescriptor);
     }
 
@@ -98,38 +100,55 @@ namespace Server{
     std::string& Server::getPassword(){
         return password;
     }
+
+    void Server::sendMessage(int socketFileDescriptor, Communication::PacketUnion message){
+        
+        send(socketFileDescriptor, message.bytes, sizeof(Communication::CommHeader) + message.packet.header.content.contentSize, MSG_NOSIGNAL);
+        
+    }
     
 
-    /* 
-        Virtual function declarations
-        theese should never be called
-    */
-    void Server::sendMessage(int socketFileDescriptor, Communication::PacketUnion message){
-        std::cout << "Dont use server use unixServer or tcpServer \n";
-        exit(-1);
+    
+
+    void Server::start(){
+
+        // start reaper
+        userHandlerReaper = std::thread(&Server::reapThreads, this);
+
+        bool shouldSkip;
+        std::string clientName;
+        // start loop
+        while(true) {
+            
+            
+            acceptIncommingConnection(shouldSkip, clientName);
+            if (shouldSkip){
+                continue;
+            }
+
+            std::cout << "got connection from " << clientName << "\n";
+            
+            int nextId = gameManager->getNextUniqueId();
+            ClientInteractionHandler* c = new ClientInteractionHandler(newSocketFileDescriptor, this, clientName, gameManager, nextId);
+            std::thread* thread = new std::thread(&ClientInteractionHandler::beginInteraction, c);
+            ClientAndThread cat = {
+                c,
+                thread,
+            };
+
+            clientHandlers[nextId] = cat;
+        }
     }
 
+    
     
     void Server::init(Game::GameManager* gameManager){
         this->gameManager = gameManager;
 
     }
 
-    void Server::start(){
-        std::cout << "beans\n"; 
+    void Server::acceptIncommingConnection(bool& shouldSkip, std::string& clientName){
+        // this should never get called
+        return;
     }
-
-    
-
-
-    
-
-    
-
-    
-
-
-
-
-    
 }

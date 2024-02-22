@@ -1,34 +1,34 @@
-[ ] BASICS
+[X] BASICS
     [X] Send message from server
     [X] Send message from client
-    [ ] Clean up the mess
+    [X] Clean up the mess
         [X] Server
         [X] Server init
         [X] Interaction handler
-        [ ] fix variable names
+        [X] fix variable names
         [X] Client
     [X] Continuous two way communication
     [X] Use something other than strings
     [X] Comm protocol kinda sucks ngl
 
-[ ] MAIN FUNCTIONALITY
+[X] MAIN FUNCTIONALITY
     [X] Passwords
     [X] List players
     [X] User threads
     [X] Phantom letters
-    [ ] Client termination sometimes causes a server crash
+    [X] Client termination sometimes causes a server crash
     // bad timeout handling???
     [X] Game
 
 [ ] Misc
     [X] Figure out unix sockets
-    [ ] All of the names are wrong
-    [ ] The code is sometimes messy
-        [ ] Server
-        [ ] Communication struct
-        [ ] Game
+    [X] All of the names are wrong
+    [X] The code is sometimes messy
+        [X] Server
+        [X] Communication struct
+        [X] Game
     [ ] Observer website ._.
-    [ ] Rewrite the packets
-    [ ] again
-    [ ] Server config
+    [X] Rewrite the packets
+    again
+    [X] Server config
     [X] Threads?

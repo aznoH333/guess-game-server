@@ -1,5 +1,4 @@
 #include "game.h"
-#include "../server/server.h"
 #include "../server/clientInteractionHandler.h"
 
 namespace Game {
@@ -40,9 +39,8 @@ namespace Game {
 
         return out;
     }
-    // returns game id
+
     void GameManager::startGame(std::string word, int hostId, int playerId){
-        std::cout << "starting game with id " << nextGameId << "\n";
         games.emplace(nextGameId, Game::Match(word, hostId, playerId, this, nextGameId));
         Player& host = userList[hostId];
         Player& player = userList[playerId];
@@ -64,7 +62,6 @@ namespace Game {
     }
 
     Match& GameManager::getGame(int gameId){
-        std::cout << "getGame id " << gameId << " \n";
         return games.at(gameId);
     }
 
@@ -130,6 +127,16 @@ namespace Game {
 
     bool Match::isPlayerHost(int userId){
         return userId == host;
+    }
+
+    void Match::giveUp(){
+        sendToBothPlayers(Communication::text("Player gave up"));
+        printStats();
+        sendToBothPlayers(Communication::text("Game over"));
+        sendToBothPlayers(Communication::play());
+        gameManager->quitGame(gameId);
+
+
     }
 
     int Match::getHostId(){

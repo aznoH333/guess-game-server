@@ -1,5 +1,4 @@
 #include "server.h"
-#include "clientInteractionHandler.h"
 
 
 namespace Server {
@@ -30,7 +29,7 @@ namespace Server {
         addrinfo* servinfo;
         addrinfo* p;
 
-        std::cout << "Started server init \n";
+        std::cout << "\nStarted server init \n";
         
         memset(&hints, 0, sizeof(hints));
         hints.ai_family = AF_UNSPEC;
@@ -74,55 +73,31 @@ namespace Server {
 
         listen(socketFileDescriptor, BACKLOG_SIZE);
 
-        std::cout << "Server init complete \n";
-    }
+        std::cout << "\nServer init complete \n";
+        std::cout << "\nServer listening on port " << port << "\n";
 
-
-    void TCPServer::sendMessage(int socketFileDescriptor, Communication::PacketUnion message){
-        send(socketFileDescriptor, message.bytes, sizeof(Communication::CommHeader) + message.packet.header.content.contentSize, 0);
     }
 
     
 
-    
-    
-
-    void TCPServer::start(){
-        std::cout << "Server listening on port " << port << "\n";
-
+    void TCPServer::acceptIncommingConnection(bool& shouldSkip, std::string& clientName){
         sockaddr_storage clientAddress;
         socklen_t sin_size;
+        
+        char clientIp[INET6_ADDRSTRLEN];
 
-
-        // start reaper
-        userHandlerReaper = std::thread(&Server::reapThreads, this);
-
-        // start loop
-        while(true) {
-            char clientIp[INET6_ADDRSTRLEN];
-
-            sin_size = sizeof(clientAddress);
-            newSocketFileDescriptor = accept(socketFileDescriptor, (struct sockaddr *)&clientAddress, &sin_size);
-            if (newSocketFileDescriptor == -1) {
-                perror("accept");
-                continue;
-            }
-
-            inet_ntop(clientAddress.ss_family,
-                get_in_addr((struct sockaddr *)&clientAddress),
-                clientIp, sizeof(clientIp));
-            printf("server: got connection from %s\n", clientIp);
-            
-            
-            int nextId = gameManager->getNextUniqueId();
-            ClientInteractionHandler* c = new ClientInteractionHandler(newSocketFileDescriptor, this, clientIp, gameManager, nextId);
-            std::thread* thread = new std::thread(&ClientInteractionHandler::beginInteraction, c);
-            ClientAndThread cat = {
-                c,
-                thread,
-            };
-
-            clientHandlers[nextId] = cat;
+        sin_size = sizeof(clientAddress);
+        newSocketFileDescriptor = accept(socketFileDescriptor, (struct sockaddr *)&clientAddress, &sin_size);
+        if (newSocketFileDescriptor == -1) {
+            perror("accept");
+            shouldSkip = true;
+            return;
         }
+
+        inet_ntop(clientAddress.ss_family,
+            get_in_addr((struct sockaddr *)&clientAddress),
+            clientIp, sizeof(clientIp));
+        clientName = clientIp;
+        shouldSkip = false;
     }
 }

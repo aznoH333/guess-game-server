@@ -43,7 +43,7 @@ namespace Server {
 
         
         protected:
-            // communication stuff
+            // setup
             int socketFileDescriptor;
             int newSocketFileDescriptor;
             Game::GameManager* gameManager;
@@ -52,14 +52,14 @@ namespace Server {
             std::thread userHandlerReaper;
             // init stuff
             std::string password;
-
+            virtual void acceptIncommingConnection(bool& shouldSkip, std::string& clientName);
             
 
         public:
             virtual void init(Game::GameManager* gameManager);
-            virtual void start();
+            void start();
             void reapThreads();
-            virtual void sendMessage(int socketFileDescriptor, Communication::PacketUnion message);
+            void sendMessage(int socketFileDescriptor, Communication::PacketUnion message);
             Communication::PacketUnion waitForResponse(int socketFileDescriptor);
             void closeSocket(int socketFileDescriptor);
             void removeHandler(int userId);
@@ -67,25 +67,41 @@ namespace Server {
             
     };
 
+
+
+
+
+
+
+
+    // theese two used to have a lot more code
+    // but then i realised that they were mostly the same
+    // --== TCP Server ==--
     class TCPServer : public Server{
         private:
             std::string port;
         
+        protected:
+            void acceptIncommingConnection(bool& shouldSkip, std::string& clientName);
+
         public:
             TCPServer(std::string port, std::string password);
             void init(Game::GameManager* gameManager);
-            void start();
-            void sendMessage(int socketFileDescriptor, Communication::PacketUnion message);
     };
 
+
+
+    // --== UnixServer ==--
     class UnixServer : public Server{
         private:
             std::string address;
+
+        protected:
+            void acceptIncommingConnection(bool& shouldSkip, std::string& clientName);
+
         public:
             UnixServer(std::string address, std::string password);
             void init(Game::GameManager* gameManager);
-            void start();
-            void sendMessage(int socketFileDescriptor, Communication::PacketUnion message);
     };
 
     

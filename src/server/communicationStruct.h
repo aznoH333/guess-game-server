@@ -15,6 +15,7 @@ namespace Communication {
         CLOSE_CONNECTION,
         LIST_PLAYERS,
         PLAY,
+        GIVE_UP,
     };
     
     struct CommStruct{

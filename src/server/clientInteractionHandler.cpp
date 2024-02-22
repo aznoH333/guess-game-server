@@ -58,7 +58,6 @@ namespace Server {
         
         server->sendMessage(socketFileDescriptor, Communication::play());
         
-        std::cout << word << "\n";
         std::string censoredWord = "";
         for (int i = 0; i < (int)word.length(); i++){
             censoredWord += '_';
@@ -72,6 +71,8 @@ namespace Server {
         }else {
             server->sendMessage(socketFileDescriptor, Communication::text("You are the player."));
             server->sendMessage(socketFileDescriptor, Communication::text("Player " + std::to_string(hostId) + " is the host"));
+            server->sendMessage(socketFileDescriptor, Communication::text("You can type \"give up\" to leave"));
+
         }
         server->sendMessage(socketFileDescriptor, Communication::text("The word is " + (isHost ? word : censoredWord)));
 
@@ -121,39 +122,52 @@ namespace Server {
                 }
                 return;
             case Communication::CommunicationCode::PLAY:
-                if (packet.header.content.contentSize < 4 || game->isUserPlaying(userId)){
-                    server->sendMessage(socketFileDescriptor, Communication::error());
+                {
+                    if (packet.header.content.contentSize < 4 || game->isUserPlaying(userId)){
+                        server->sendMessage(socketFileDescriptor, Communication::error());
+                        return;
+                    }
+                    
+                    // decode play packet
+                    int opponentId;
+                    std::string word = "";
+                    Communication::readPlayPacket(packet, opponentId, word);
+
+                    
+
+                    // check if player exists
+                    if (!game->doesUserExist(opponentId)){
+                        server->sendMessage(socketFileDescriptor, Communication::text("Opponent not found"));
+                        return;
+                    }
+
+                    // check if opponent is in game
+                    if (game->isUserPlaying(opponentId)){
+                        server->sendMessage(socketFileDescriptor, Communication::text("Opponent is currently in game"));
+                        return;
+                    }
+
+                    // cant play against self
+                    if (userId == opponentId){
+                        server->sendMessage(socketFileDescriptor, Communication::text("You cant play against yourself"));
+                        return;
+                    }
+
+                    // start game
+                    game->startGame(word, userId, opponentId);
+
                     return;
                 }
-                
-                // decode play packet
-                int opponentId;
-                std::string word = "";
-                Communication::readPlayPacket(packet, opponentId, word);
+            case Communication::CommunicationCode::GIVE_UP:
+                Game::Match& m = game->getGame(game->getPlayer(userId).gameId);
+                bool isHost = m.isPlayerHost(userId);
 
-                
-
-                // check if game can happen
-                if (!game->doesUserExist(opponentId)){
-                    server->sendMessage(socketFileDescriptor, Communication::text("Opponent not found"));
-                    return;
+                if (isHost){
+                    m.hint("give up"); // a wacky edge case
+                }else {
+                    m.giveUp();
                 }
-
-                // check if opponent is in game
-                if (game->isUserPlaying(opponentId)){
-                    server->sendMessage(socketFileDescriptor, Communication::text("Opponent is currently in game"));
-                    return;
-                }
-
-                if (userId == opponentId){
-                    server->sendMessage(socketFileDescriptor, Communication::text("You cant play against yourself"));
-                    return;
-                }
-
-                // start game
-                game->startGame(word, userId, opponentId);
-
-                return;
+                return;;
 
         }
     }
