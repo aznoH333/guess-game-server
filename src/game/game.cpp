@@ -1,5 +1,6 @@
 #include "game.h"
 #include "../server/server.h"
+#include "../server/clientInteractionHandler.h"
 
 namespace Game {
 

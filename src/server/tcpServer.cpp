@@ -1,4 +1,6 @@
 #include "server.h"
+#include "clientInteractionHandler.h"
+
 
 namespace Server {
 

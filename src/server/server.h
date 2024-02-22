@@ -18,12 +18,11 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <sys/un.h>
+#include "clientInteractionHandler.h"
+
 
 namespace Server {
-    enum ServerType{
-        UNIX_SOCKET,
-        TCP,
-    };
+    
     
     struct ServerInitInfo{
         std::string serverPort;
@@ -35,52 +34,12 @@ namespace Server {
     ServerInitInfo getInitInfo();
 
 
-    class Server;
-
-     
-
-    class ClientInteractionHandler{
-        
-        private:
-            int userId = 0;
-            bool shouldContinue = true;
-            int socketFileDescriptor;
-            Server* server;
-            Game::GameManager* game;
-            std::string clientIp;
-            int gameId = 0;
-            
-
-
-
-            void closeHandler();
-            void respondToPacket(Communication::CommunicationPacket packet);
-        
-
-
-        public:
-            ClientInteractionHandler(int socketFileDescriptor, Server* server, std::string clientIp, Game::GameManager* game, int userId);
-            ~ClientInteractionHandler();
-            void beginInteraction();
-            void sendMessage(Communication::CommunicationPacket packet);
-            void mainLoop();
-            void startedPlaying(bool isHost, int hostId, int playerId, std::string& word);
-
-        
-    };
-
-    struct ClientAndThread {
-        ClientInteractionHandler* client;
-        std::thread* thread;
-        bool shouldBeDeleted = false;
-    };
-
-    
-
     class Server{
         
         private:
+            
             void waitForMessage(int socketFileDescriptor, char* resultBuffer, unsigned long size, int flags);
+            
 
         
         protected:
@@ -106,7 +65,6 @@ namespace Server {
             ServerInitInfo& getInfo();
             void removeHandler(int userId);
             
-            void dispose();
     };
 
     class TCPServer : public Server{
