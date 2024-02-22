@@ -18,10 +18,7 @@ namespace Server {
             Server* server;
             Game::GameManager* game;
             std::string clientIp;
-            int gameId = 0;
             
-
-
 
             void respondToPacket(Communication::CommunicationPacket packet);
         

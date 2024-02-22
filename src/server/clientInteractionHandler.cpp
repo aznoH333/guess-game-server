@@ -109,7 +109,7 @@ namespace Server {
                 return;
             case Communication::CommunicationCode::TEXT:
                 {
-                    Game::Match& m = game->getGame(gameId);
+                    Game::Match& m = game->getGame(game->getPlayer(userId).gameId);
                     bool isHost = m.isPlayerHost(userId);
                     std::string text = Communication::getTextFromContent(packet);
 

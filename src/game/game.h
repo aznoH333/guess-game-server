@@ -59,7 +59,7 @@ namespace Game{
             bool doesUserExist(int userId);
             std::vector<int> listAllPlayers();
             void removeUser(int userId);
-            int startGame(std::string word, int user1Id, int user2Id);
+            void startGame(std::string word, int user1Id, int user2Id);
             Match& getGame(int gameId);
             Player& getPlayer(int playerId);
             void quitGame(int gameId);

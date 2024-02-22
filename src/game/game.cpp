@@ -41,7 +41,8 @@ namespace Game {
         return out;
     }
     // returns game id
-    int GameManager::startGame(std::string word, int hostId, int playerId){
+    void GameManager::startGame(std::string word, int hostId, int playerId){
+        std::cout << "starting game with id " << nextGameId << "\n";
         games.emplace(nextGameId, Game::Match(word, hostId, playerId, this, nextGameId));
         Player& host = userList[hostId];
         Player& player = userList[playerId];
@@ -57,10 +58,13 @@ namespace Game {
         host.handler->startedPlaying(true, hostId, playerId, word);
         player.handler->startedPlaying(false, hostId, playerId, word);
 
-        return nextGameId++;
+
+        
+        nextGameId++;
     }
 
     Match& GameManager::getGame(int gameId){
+        std::cout << "getGame id " << gameId << " \n";
         return games.at(gameId);
     }
 
@@ -69,6 +73,7 @@ namespace Game {
     }
 
     void GameManager::quitGame(int gameId){
+        
         Match* m = &getGame(gameId);
         
         // remove players from game
