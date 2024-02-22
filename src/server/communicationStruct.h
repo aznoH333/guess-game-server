@@ -16,19 +16,15 @@ namespace Communication {
         LIST_PLAYERS,
         PLAY,
     };
-
-    
-    
-    
     
     struct CommStruct{
         char communicationCode;
-        int contentLength;
+        int contentSize;
     };
 
 
-    union CommUnion {
-        CommStruct comm;
+    union CommHeader {
+        CommStruct content;
         char bytes[sizeof(CommStruct)];
     };
 
@@ -37,18 +33,27 @@ namespace Communication {
     };
 
     struct CommunicationPacket{
-        CommUnion header;
+        CommHeader header;
         CommunicationContent content;
     };
+
+    union PacketUnion{
+        CommunicationPacket packet;
+        char bytes[sizeof(CommunicationPacket)];
+    };
+
+    
+
+    
 
     std::string getTextFromContent(CommunicationPacket& packet);
 
     // response utility functions
-    CommunicationPacket error();
-    CommunicationPacket text(std::string text);
-    CommunicationPacket closeConnection();
+    PacketUnion error();
+    PacketUnion text(std::string text);
+    PacketUnion closeConnection();
     void readPlayPacket(CommunicationPacket& packet, int& outId, std::string& outWord);
-    CommunicationPacket play();
+    PacketUnion play();
 
 }
 

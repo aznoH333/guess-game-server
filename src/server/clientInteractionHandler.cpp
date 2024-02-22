@@ -14,11 +14,11 @@ namespace Server {
 
     void ClientInteractionHandler::beginInteraction(){
         server->sendMessage(socketFileDescriptor, Communication::text("Enter password"));
-        Communication::CommunicationPacket p = server->waitForResponse(socketFileDescriptor);
+        Communication::CommunicationPacket p = server->waitForResponse(socketFileDescriptor).packet;
         std::string res = Communication::getTextFromContent(p);
 
         
-        if (p.header.comm.communicationCode == Communication::CommunicationCode::TEXT && res == server->getPassword()){
+        if (p.header.content.communicationCode == Communication::CommunicationCode::TEXT && res == server->getPassword()){
             server->sendMessage(socketFileDescriptor, Communication::text("Correct password"));
             server->sendMessage(socketFileDescriptor, Communication::text("Your id is " + std::to_string(userId)));
             game->addUser(userId, this);
@@ -39,7 +39,7 @@ namespace Server {
     void ClientInteractionHandler::mainLoop(){
         server->sendMessage(socketFileDescriptor, Communication::text("The server is listening for commands"));
         while(shouldContinue){
-            Communication::CommunicationPacket packet = server->waitForResponse(socketFileDescriptor);
+            Communication::CommunicationPacket packet = server->waitForResponse(socketFileDescriptor).packet;
             respondToPacket(packet);
         }
         
@@ -81,13 +81,13 @@ namespace Server {
 
     }
 
-    void ClientInteractionHandler::sendMessage(Communication::CommunicationPacket packet){
+    void ClientInteractionHandler::sendMessage(Communication::PacketUnion packet){
         server->sendMessage(socketFileDescriptor, packet);
     }
 
 
     void ClientInteractionHandler::respondToPacket(Communication::CommunicationPacket packet){
-        switch (packet.header.comm.communicationCode) {
+        switch (packet.header.content.communicationCode) {
             default:
             case Communication::CommunicationCode::ERROR:
                 server->sendMessage(socketFileDescriptor, Communication::text("Error occured closing connection"));
@@ -121,7 +121,7 @@ namespace Server {
                 }
                 return;
             case Communication::CommunicationCode::PLAY:
-                if (packet.header.comm.contentLength < 4 || game->isUserPlaying(userId)){
+                if (packet.header.content.contentSize < 4 || game->isUserPlaying(userId)){
                     server->sendMessage(socketFileDescriptor, Communication::error());
                     return;
                 }

@@ -48,7 +48,7 @@ namespace Server {
             int newSocketFileDescriptor;
             Game::GameManager* gameManager;
             std::map<int, ClientAndThread> clientHandlers;
-            int yes=1; // ????
+            int yes=1;
             std::thread userHandlerReaper;
             // init stuff
             std::string password;
@@ -59,8 +59,8 @@ namespace Server {
             virtual void init(Game::GameManager* gameManager);
             virtual void start();
             void reapThreads();
-            virtual void sendMessage(int socketFileDescriptor, Communication::CommunicationPacket message);
-            Communication::CommunicationPacket waitForResponse(int socketFileDescriptor);
+            virtual void sendMessage(int socketFileDescriptor, Communication::PacketUnion message);
+            Communication::PacketUnion waitForResponse(int socketFileDescriptor);
             void closeSocket(int socketFileDescriptor);
             void removeHandler(int userId);
             std::string& getPassword();
@@ -75,7 +75,7 @@ namespace Server {
             TCPServer(std::string port, std::string password);
             void init(Game::GameManager* gameManager);
             void start();
-            void sendMessage(int socketFileDescriptor, Communication::CommunicationPacket message);
+            void sendMessage(int socketFileDescriptor, Communication::PacketUnion message);
     };
 
     class UnixServer : public Server{
@@ -85,7 +85,7 @@ namespace Server {
             UnixServer(std::string address, std::string password);
             void init(Game::GameManager* gameManager);
             void start();
-            void sendMessage(int socketFileDescriptor, Communication::CommunicationPacket message);
+            void sendMessage(int socketFileDescriptor, Communication::PacketUnion message);
     };
 
     

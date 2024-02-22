@@ -78,11 +78,8 @@ namespace Server {
     }
 
 
-    void TCPServer::sendMessage(int socketFileDescriptor, Communication::CommunicationPacket message){
-        send(socketFileDescriptor, message.header.bytes, sizeof(Communication::CommUnion), 0);
-        if (message.header.comm.contentLength > 0){
-            send(socketFileDescriptor, message.content.bytes, message.header.comm.contentLength, 0);
-        }
+    void TCPServer::sendMessage(int socketFileDescriptor, Communication::PacketUnion message){
+        send(socketFileDescriptor, message.bytes, sizeof(Communication::CommHeader) + message.packet.header.content.contentSize, 0);
     }
 
     

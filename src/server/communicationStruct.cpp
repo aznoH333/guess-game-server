@@ -1,45 +1,43 @@
 #include "communicationStruct.h"
-#include <iostream>
-
 
 namespace Communication {
 
-    CommunicationPacket error(){
+    PacketUnion error(){
         CommunicationPacket out;
 
-        out.header.comm.communicationCode = CommunicationCode::ERROR;
-        out.header.comm.contentLength = 0;
+        out.header.content.communicationCode = CommunicationCode::ERROR;
+        out.header.content.contentSize = 0;
         
-        return out;
+        return {out};
     }
 
-    CommunicationPacket text(std::string text){
+    PacketUnion text(std::string text){
         
         CommunicationPacket output;
-        output.header.comm.communicationCode = CommunicationCode::TEXT;
-        output.header.comm.contentLength = text.length();
+        output.header.content.communicationCode = CommunicationCode::TEXT;
+        output.header.content.contentSize = text.length();
 
 
         for (int i = 0; i < (int)text.length(); i++){
             output.content.bytes[i] = text[i];
         }
-        
-        return output;
+
+        return {output};
     }
 
-    CommunicationPacket closeConnection(){
+    PacketUnion closeConnection(){
         CommunicationPacket out;
 
-        out.header.comm.communicationCode = CommunicationCode::CLOSE_CONNECTION;
-        out.header.comm.contentLength = 0;
+        out.header.content.communicationCode = CommunicationCode::CLOSE_CONNECTION;
+        out.header.content.contentSize = 0;
         
-        return out;
+        return {out};
     }
 
     std::string getTextFromContent(CommunicationPacket& packet){
         std::string out = "";
 
-        for (int i = 0; i < packet.header.comm.contentLength; i++){
+        for (int i = 0; i < packet.header.content.contentSize; i++){
             out += packet.content.bytes[i];
         }
 
@@ -51,19 +49,17 @@ namespace Communication {
         outId = Utils::readIntFromBytes(packet.content.bytes, 0);
         outWord = "";
         // read word
-        for (int i = 4; i < packet.header.comm.contentLength; i++){
+        for (int i = 4; i < packet.header.content.contentSize; i++){
             outWord += packet.content.bytes[i];
         }
     }
 
 
-    CommunicationPacket play(){
+    PacketUnion play(){
         CommunicationPacket output;
-        output.header.comm.communicationCode = CommunicationCode::PLAY;
-        output.header.comm.contentLength = 0;
-        return output;
-
-
+        output.header.content.communicationCode = CommunicationCode::PLAY;
+        output.header.content.contentSize = 0;
+        return {output};
     }
 
 }

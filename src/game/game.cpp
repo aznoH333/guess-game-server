@@ -118,7 +118,7 @@ namespace Game {
         sendToBothPlayers(Communication::text("Guesses : " + std::to_string(guessCount)));
     }
 
-    void Match::sendToBothPlayers(Communication::CommunicationPacket packet){
+    void Match::sendToBothPlayers(Communication::PacketUnion packet){
         gameManager->getPlayer(player).handler->sendMessage(packet);
         gameManager->getPlayer(host).handler->sendMessage(packet);
     }

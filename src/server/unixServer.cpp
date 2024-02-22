@@ -48,14 +48,9 @@ namespace Server {
 
         std::cout << "Server init complete \n";
     }
-    void UnixServer::sendMessage(int socketFileDescriptor, Communication::CommunicationPacket message){
-        write(socketFileDescriptor, message.header.bytes, sizeof(Communication::CommUnion));
+    void UnixServer::sendMessage(int socketFileDescriptor, Communication::PacketUnion message){
+        write(socketFileDescriptor, message.bytes, sizeof(Communication::CommHeader) + message.packet.header.content.contentSize);
 
-        if (message.header.comm.contentLength > 0){
-            // send content
-            write(socketFileDescriptor, message.content.bytes, message.header.comm.contentLength);
-
-        }
     }
     
     

@@ -31,7 +31,7 @@ namespace Game{
             int guessCount = 0;
             int gameId;
 
-            void sendToBothPlayers(Communication::CommunicationPacket packet);
+            void sendToBothPlayers(Communication::PacketUnion packet);
 
         public:
             Match(std::string word, int host, int player, GameManager* gameManager, int gameId);

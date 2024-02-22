@@ -31,7 +31,7 @@ namespace Server {
             ClientInteractionHandler(int socketFileDescriptor, Server* server, std::string clientIp, Game::GameManager* game, int userId);
             ~ClientInteractionHandler();
             void beginInteraction();
-            void sendMessage(Communication::CommunicationPacket packet);
+            void sendMessage(Communication::PacketUnion packet);
             void mainLoop();
             void closeHandler();
             void startedPlaying(bool isHost, int hostId, int playerId, std::string& word);

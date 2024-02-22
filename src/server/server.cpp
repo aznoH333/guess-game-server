@@ -85,13 +85,13 @@ namespace Server{
         close(socketFileDescriptor);
     }
 
-    Communication::CommunicationPacket Server::waitForResponse(int socketFileDescriptor){
-        Communication::CommunicationPacket result;
+    Communication::PacketUnion Server::waitForResponse(int socketFileDescriptor){
+        Communication::PacketUnion result;
         
-        waitForMessage(socketFileDescriptor, result.header.bytes, sizeof(Communication::CommUnion), 0);
-        if (result.header.comm.contentLength > 0){
-            waitForMessage(socketFileDescriptor, result.content.bytes, sizeof(Communication::CommUnion), 0);
-        }
+        waitForMessage(socketFileDescriptor, result.packet.header.bytes, sizeof(Communication::CommHeader), MSG_PEEK);
+        waitForMessage(socketFileDescriptor, result.bytes, result.packet.header.content.contentSize + sizeof(Communication::CommHeader), 0);
+
+        
         return result;
     }
 
@@ -104,7 +104,7 @@ namespace Server{
         Virtual function declarations
         theese should never be called
     */
-    void Server::sendMessage(int socketFileDescriptor, Communication::CommunicationPacket message){
+    void Server::sendMessage(int socketFileDescriptor, Communication::PacketUnion message){
         std::cout << "Dont use server use unixServer or tcpServer \n";
         exit(-1);
     }
